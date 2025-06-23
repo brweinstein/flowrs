@@ -8,9 +8,9 @@ As of right now I have implemented the basic foundation of the Flow Solver proje
 
 ### Example images
 
-![5x5](pictures/5x5_bf.png)
-![6x6](pictures/6x6_bf.png)
-![7x7](pictures/7x7_bf.png)
+![5x5](Log/pictures/5x5_bf.png)
+![6x6](Log/pictures/6x6_bf.png)
+![7x7](Log/pictures/7x7_bf.png)
 
 This 7x7 grid takes a long time and trying the 8x8 is significantly longer. I have yet to let the program run long enough to solve an 8x8.
 
