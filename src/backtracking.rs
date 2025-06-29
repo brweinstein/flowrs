@@ -1,7 +1,6 @@
 use crate::*;
 use std::collections::{HashMap, HashSet};
 
-/// Find all valid paths from `current` to `end` (brute force)
 fn find_paths(
     grid: &Grid,
     current: Point,
@@ -29,7 +28,13 @@ fn find_paths(
                 results.extend(subpaths);
                 path.pop();
             }
-            Cell::Endpoint(c) if c == colour => {
+            Cell::Path { colour: c } if c == colour => {
+                path.push(neighbour);
+                let subpaths = find_paths(grid, neighbour, end, colour, visited, path);
+                results.extend(subpaths);
+                path.pop();
+            }
+            Cell::Endpoint { colour: c } if c == colour => {
                 path.push(neighbour);
                 let subpaths = find_paths(grid, neighbour, end, colour, visited, path);
                 results.extend(subpaths);
@@ -43,37 +48,53 @@ fn find_paths(
     results
 }
 
-/// Brute force solver
 pub fn brute_force(grid: &mut Grid) -> bool {
-    let endpoints: HashMap<Colour, (Point, Point)> = grid.clone().find_endpoints();
+    let endpoints = grid.get_endpoints();
+    grid.fill_guaranteed(&endpoints);
+    println!("{}", grid);
+
     let pairs: Vec<(Colour, Point, Point)> =
         endpoints.iter().map(|(&c, &(s, e))| (c, s, e)).collect();
 
-    fn backtrack(grid: &mut Grid, pairs: &[(Colour, Point, Point)], index: usize) -> bool {
+    fn backtrack(
+        grid: &mut Grid,
+        pairs: &[(Colour, Point, Point)],
+        index: usize,
+        endpoints: &HashMap<Colour, (Point, Point)>,
+    ) -> bool {
         if index == pairs.len() {
-            return grid.is_solved(&pairs.iter().map(|(c, s, e)| (*c, (*s, *e))).collect());
+            return grid.is_solved(endpoints);
         }
 
         let (colour, start, end) = pairs[index];
+
+        if grid.connected(colour, start, end) {
+            return backtrack(grid, pairs, index + 1, endpoints);
+        }
+
         let mut visited = HashSet::new();
         let mut path = vec![];
 
         let all_paths = find_paths(grid, start, end, colour, &mut visited, &mut path);
 
-        for path in all_paths {
-            for &p in &path {
-                if grid.get(p) == Cell::Empty {
-                    grid.set(p, Cell::Path(colour));
+        for path in all_paths.iter() {
+            for &p in path {
+                if matches!(grid.get(p), Cell::Empty) {
+                    grid.set(p, Cell::Path { colour });
                 }
             }
 
-            if backtrack(grid, pairs, index + 1) {
+            grid.fill_guaranteed(endpoints);
+
+            if backtrack(grid, pairs, index + 1, endpoints) {
                 return true;
             }
 
-            for &p in &path {
-                if grid.get(p) == Cell::Path(colour) {
-                    grid.set(p, Cell::Empty);
+            for &p in path {
+                if let Cell::Path { colour: c } = grid.get(p) {
+                    if c == colour {
+                        grid.set(p, Cell::Empty);
+                    }
                 }
             }
         }
@@ -81,5 +102,5 @@ pub fn brute_force(grid: &mut Grid) -> bool {
         false
     }
 
-    backtrack(grid, &pairs, 0)
+    backtrack(grid, &pairs, 0, &endpoints)
 }
