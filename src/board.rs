@@ -112,6 +112,28 @@ impl Point {
         }
         result
     }
+
+    pub fn step(&self, dir: usize, w: usize, h: usize) -> Option<Point> {
+        match dir {
+            0 if self.y > 0 => Some(Point {
+                x: self.x,
+                y: self.y - 1,
+            }),
+            1 if self.x + 1 < w => Some(Point {
+                x: self.x + 1,
+                y: self.y,
+            }),
+            2 if self.y + 1 < h => Some(Point {
+                x: self.x,
+                y: self.y + 1,
+            }),
+            3 if self.x > 0 => Some(Point {
+                x: self.x - 1,
+                y: self.y,
+            }),
+            _ => None,
+        }
+    }
 }
 
 #[derive(Clone, PartialEq, Eq)]

@@ -2,15 +2,10 @@
 
 Inspiration: https://mzucker.github.io/2016/08/28/flow-solver.html
 
-## June 23 2025
-
-As of right now I have implemented the basic foundation of the Flow Solver project.
-
 ### Example images
 
-![5x5](Log/pictures/5x5_bf.png)
-![6x6](Log/pictures/6x6_bf.png)
-![7x7](Log/pictures/7x7_bf.png)
+![](/media/5and6.png)
+![](/media/7and8.png)
 
 This 7x7 grid takes a long time and trying the 8x8 is significantly longer. I have yet to let the program run long enough to solve an 8x8.
 

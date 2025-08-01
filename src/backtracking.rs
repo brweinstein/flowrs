@@ -1,6 +1,14 @@
 use crate::*;
 use std::collections::{HashMap, HashSet};
 
+/// Represents the outcome of brute-force solving.
+pub enum SolveResult {
+    Solved,
+    Impossible,
+}
+
+/// Finds all possible paths for a given colour from `current` to `end`,
+/// traversing only valid cells for that colour.
 fn find_paths(
     grid: &Grid,
     current: Point,
@@ -48,10 +56,12 @@ fn find_paths(
     results
 }
 
-pub fn brute_force(grid: &mut Grid) -> bool {
+/// Attempts to solve the puzzle by brute-force enumeration of valid paths.
+/// Returns `SolveResult::Solved` if a complete fill is found,
+/// or `SolveResult::Impossible` if no solution exists.
+pub fn brute_force(grid: &mut Grid) -> SolveResult {
     let endpoints = grid.get_endpoints();
     grid.fill_guaranteed(&endpoints);
-    println!("{}", grid);
 
     let pairs: Vec<(Colour, Point, Point)> =
         endpoints.iter().map(|(&c, &(s, e))| (c, s, e)).collect();
@@ -76,6 +86,11 @@ pub fn brute_force(grid: &mut Grid) -> bool {
         let mut path = vec![];
 
         let all_paths = find_paths(grid, start, end, colour, &mut visited, &mut path);
+
+        // Prune if no path exists for this colour
+        if all_paths.is_empty() {
+            return false;
+        }
 
         for path in all_paths.iter() {
             for &p in path {
@@ -102,5 +117,9 @@ pub fn brute_force(grid: &mut Grid) -> bool {
         false
     }
 
-    backtrack(grid, &pairs, 0, &endpoints)
+    if backtrack(grid, &pairs, 0, &endpoints) {
+        SolveResult::Solved
+    } else {
+        SolveResult::Impossible
+    }
 }
