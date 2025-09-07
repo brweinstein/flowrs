@@ -1,3 +1,23 @@
+pub fn colour_to_char(colour: Colour) -> char {
+    match colour {
+        Colour::Red => 'R',
+        Colour::Green => 'G',
+        Colour::Blue => 'B',
+        Colour::Yellow => 'Y',
+        Colour::Magenta => 'M',
+        Colour::Orange => 'O',
+        Colour::Cyan => 'C',
+        Colour::Brown => 'm',
+        Colour::Purple => 'P',
+        Colour::White => 'W',
+        Colour::Gray => 'g',
+        Colour::Lime => 'L',
+        Colour::Beige => 'b',
+        Colour::Navy => 'N',
+        Colour::Teal => 'T',
+        Colour::Pink => 'p',
+    }
+}
 use colored::Colorize;
 use std::collections::{HashMap, HashSet};
 use std::fmt;

@@ -1,14 +1,11 @@
-use crate::*;
+use crate::board::{Cell, Colour, Grid, Point};
 use std::collections::{HashMap, HashSet};
 
-/// Represents the outcome of brute-force solving.
 pub enum SolveResult {
     Solved,
     Impossible,
 }
 
-/// Finds all possible paths for a given colour from `current` to `end`,
-/// traversing only valid cells for that colour.
 fn find_paths(
     grid: &Grid,
     current: Point,
@@ -56,9 +53,6 @@ fn find_paths(
     results
 }
 
-/// Attempts to solve the puzzle by brute-force enumeration of valid paths.
-/// Returns `SolveResult::Solved` if a complete fill is found,
-/// or `SolveResult::Impossible` if no solution exists.
 pub fn brute_force(grid: &mut Grid) -> SolveResult {
     let endpoints = grid.get_endpoints();
     grid.fill_guaranteed(&endpoints);
@@ -87,7 +81,6 @@ pub fn brute_force(grid: &mut Grid) -> SolveResult {
 
         let all_paths = find_paths(grid, start, end, colour, &mut visited, &mut path);
 
-        // Prune if no path exists for this colour
         if all_paths.is_empty() {
             return false;
         }

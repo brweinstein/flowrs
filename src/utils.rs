@@ -1,4 +1,4 @@
-use crate::*;
+use crate::board::{Colour, Grid, Point};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{BufRead, BufReader};
