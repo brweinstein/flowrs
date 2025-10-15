@@ -6,7 +6,7 @@ Inspired by mzucker’s flow-solver, this project aims to build efficient, modul
 ## Features
 - Fully functional brute-force backtracking solver in Rust (backtracking.rs)
 
-- A* and SAT based optimized solvers (astar.rs and sat.rs)
+- UNFISHINED WIP A* and SAT
 
 - Core puzzle logic and data structures (board.rs)
 
