@@ -1,5 +1,5 @@
-pub mod astar;
+pub mod app;
 pub mod backtracking;
 pub mod board;
-pub mod sat;
+pub mod tui;
 pub mod utils;

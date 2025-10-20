@@ -5,18 +5,13 @@ Inspired by mzucker’s flow-solver, this project aims to build efficient, modul
 
 ## Features
 - Fully functional brute-force backtracking solver in Rust (backtracking.rs)
-
-- UNFISHINED WIP A* and SAT
-
+- Heuristic constraint-based solver with MRV ordering and pruning (heuristic.rs)
 - Core puzzle logic and data structures (board.rs)
-
 - File-based puzzle loading and runtime timing tools (utils.rs)
-
 - CLI entry point and modular architecture (main.rs, lib.rs)
 
 ## Example Outputs
-![5x5 and 6x6](/media/5and6.png)  
-![7x7 and 8x8](/media/7and8.png)
+![tui](flowrs.png)  
 The 7x7 grid is slow to solve; 8x8 is significantly longer and may stall without further optimizations.
 The 9x9 grid I have yet to solve with the brute force method.
 
@@ -31,7 +26,6 @@ flowrs/
     ├── board.rs          # Grid, Point, Cell, Colour, etc.
     ├── lib.rs            # Project module entry
     ├── main.rs           # CLI runner
-    ├── puzzle_ai.rs      # Placeholder for AI integration
     └── utils.rs          # Puzzle file loading, timing utilities
 ```
 

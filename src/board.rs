@@ -1,26 +1,4 @@
-pub fn colour_to_char(colour: Colour) -> char {
-    match colour {
-        Colour::Red => 'R',
-        Colour::Green => 'G',
-        Colour::Blue => 'B',
-        Colour::Yellow => 'Y',
-        Colour::Magenta => 'M',
-        Colour::Orange => 'O',
-        Colour::Cyan => 'C',
-        Colour::Brown => 'm',
-        Colour::Purple => 'P',
-        Colour::White => 'W',
-        Colour::Gray => 'g',
-        Colour::Lime => 'L',
-        Colour::Beige => 'b',
-        Colour::Navy => 'N',
-        Colour::Teal => 'T',
-        Colour::Pink => 'p',
-    }
-}
-use colored::Colorize;
 use std::collections::{HashMap, HashSet};
-use std::fmt;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Colour {
@@ -71,38 +49,6 @@ pub enum Cell {
     Empty,
     Endpoint { colour: Colour },
     Path { colour: Colour },
-}
-
-fn format_coloured(c: char, colour: &Colour) -> String {
-    match colour {
-        Colour::Red => c.to_string().red().to_string(),
-        Colour::Green => c.to_string().green().to_string(),
-        Colour::Blue => c.to_string().blue().to_string(),
-        Colour::Yellow => c.to_string().yellow().to_string(),
-        Colour::Magenta => c.to_string().magenta().to_string(),
-        Colour::Orange => c.to_string().truecolor(255, 165, 0).to_string(),
-        Colour::Cyan => c.to_string().cyan().to_string(),
-        Colour::Brown => c.to_string().truecolor(139, 69, 19).to_string(),
-        Colour::Purple => c.to_string().truecolor(128, 0, 128).to_string(),
-        Colour::White => c.to_string().white().to_string(),
-        Colour::Gray => c.to_string().bright_black().to_string(),
-        Colour::Lime => c.to_string().truecolor(0, 255, 0).to_string(),
-        Colour::Beige => c.to_string().truecolor(245, 245, 220).to_string(),
-        Colour::Navy => c.to_string().truecolor(0, 0, 128).to_string(),
-        Colour::Teal => c.to_string().truecolor(0, 128, 128).to_string(),
-        Colour::Pink => c.to_string().truecolor(255, 192, 203).to_string(),
-    }
-}
-
-impl fmt::Display for Cell {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        let ch = match self {
-            Cell::Empty => ".".to_string(),
-            Cell::Endpoint { colour } => format_coloured('O', colour),
-            Cell::Path { colour } => format_coloured('o', colour),
-        };
-        write!(f, "{}", ch)
-    }
 }
 
 #[derive(Clone, Copy, PartialEq, Eq, Hash, Debug)]
@@ -342,17 +288,5 @@ impl Grid {
         for (p, cell) in updates {
             self.set(p, cell);
         }
-    }
-}
-
-impl fmt::Display for Grid {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for row in &self.cells {
-            for cell in row {
-                write!(f, "{} ", cell)?;
-            }
-            writeln!(f)?;
-        }
-        Ok(())
     }
 }
