@@ -28,13 +28,16 @@ fn find_paths(
                 results.extend(subpaths);
                 path.pop();
             }
-            Cell::Path { colour: c } if c == colour => {
-                path.push(neighbour);
-                let subpaths = find_paths(grid, neighbour, end, colour, visited, path);
-                results.extend(subpaths);
-                path.pop();
+            Cell::Path { colour: c, solved } if c == colour => {
+                // Skip already solved cells to avoid overwriting guaranteed solutions
+                if !solved {
+                    path.push(neighbour);
+                    let subpaths = find_paths(grid, neighbour, end, colour, visited, path);
+                    results.extend(subpaths);
+                    path.pop();
+                }
             }
-            Cell::Endpoint { colour: c } if c == colour => {
+            Cell::Endpoint { colour: c, .. } if c == colour => {
                 path.push(neighbour);
                 let subpaths = find_paths(grid, neighbour, end, colour, visited, path);
                 results.extend(subpaths);
@@ -51,6 +54,7 @@ fn find_paths(
 pub fn brute_force(grid: &mut Grid) -> bool {
     let endpoints = grid.get_endpoints();
     grid.fill_guaranteed(&endpoints);
+    println!("{}", grid);
 
     let pairs: Vec<(Colour, Point, Point)> =
         endpoints.iter().map(|(&c, &(s, e))| (c, s, e)).collect();
@@ -79,7 +83,7 @@ pub fn brute_force(grid: &mut Grid) -> bool {
         for path in all_paths.iter() {
             for &p in path {
                 if matches!(grid.get(p), Cell::Empty) {
-                    grid.set(p, Cell::Path { colour });
+                    grid.set(p, Cell::Path { colour, solved: false });
                 }
             }
 
@@ -90,8 +94,8 @@ pub fn brute_force(grid: &mut Grid) -> bool {
             }
 
             for &p in path {
-                if let Cell::Path { colour: c } = grid.get(p) {
-                    if c == colour {
+                if let Cell::Path { colour: c, solved } = grid.get(p) {
+                    if c == colour && !solved {
                         grid.set(p, Cell::Empty);
                     }
                 }

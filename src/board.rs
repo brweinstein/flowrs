@@ -49,8 +49,8 @@ impl Colour {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Cell {
     Empty,
-    Endpoint { colour: Colour },
-    Path { colour: Colour },
+    Endpoint { colour: Colour, solved: bool },
+    Path { colour: Colour, solved: bool },
 }
 
 fn format_coloured(c: char, colour: &Colour) -> String {
@@ -74,12 +74,38 @@ fn format_coloured(c: char, colour: &Colour) -> String {
     }
 }
 
+impl Cell {
+    pub fn is_solved(&self) -> bool {
+        match self {
+            Cell::Empty => false,
+            Cell::Endpoint { solved, .. } => *solved,
+            Cell::Path { solved, .. } => *solved,
+        }
+    }
+
+    pub fn colour(&self) -> Option<Colour> {
+        match self {
+            Cell::Empty => None,
+            Cell::Endpoint { colour, .. } => Some(*colour),
+            Cell::Path { colour, .. } => Some(*colour),
+        }
+    }
+
+    pub fn mark_solved(&self) -> Self {
+        match self {
+            Cell::Empty => *self,
+            Cell::Endpoint { colour, .. } => Cell::Endpoint { colour: *colour, solved: true },
+            Cell::Path { colour, .. } => Cell::Path { colour: *colour, solved: true },
+        }
+    }
+}
+
 impl fmt::Display for Cell {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let ch = match self {
             Cell::Empty => ".".to_string(),
-            Cell::Endpoint { colour } => format_coloured('O', colour),
-            Cell::Path { colour } => format_coloured('o', colour),
+            Cell::Endpoint { colour, .. } => format_coloured('O', colour),
+            Cell::Path { colour, .. } => format_coloured('o', colour),
         };
         write!(f, "{}", ch)
     }
@@ -126,8 +152,8 @@ impl Grid {
         let mut cells = vec![vec![Cell::Empty; width]; height];
 
         for (&colour, &(p1, p2)) in endpoints {
-            cells[p1.y][p1.x] = Cell::Endpoint { colour };
-            cells[p2.y][p2.x] = Cell::Endpoint { colour };
+            cells[p1.y][p1.x] = Cell::Endpoint { colour, solved: false };
+            cells[p2.y][p2.x] = Cell::Endpoint { colour, solved: false };
         }
 
         Self {
@@ -151,7 +177,7 @@ impl Grid {
         for y in 0..self.height {
             for x in 0..self.width {
                 let p = Point::new(x, y);
-                if let Cell::Endpoint { colour } = self.get(p) {
+                if let Cell::Endpoint { colour, .. } = self.get(p) {
                     endpoints.entry(colour).or_default().push(p);
                 }
             }
@@ -206,7 +232,7 @@ impl Grid {
                     continue;
                 }
                 match self.get(neighbor) {
-                    Cell::Path { colour: c } | Cell::Endpoint { colour: c } if c == colour => {
+                    Cell::Path { colour: c, .. } | Cell::Endpoint { colour: c, .. } if c == colour => {
                         visited.insert(neighbor);
                         queue.push_back(neighbor);
                     }
@@ -223,7 +249,57 @@ impl Grid {
             p.x == 0 || p.x == width - 1 || p.y == 0 || p.y == height - 1
         }
 
-        fn border_path_exists(
+        fn is_adjacent_to_solved(grid: &Grid, point: Point) -> bool {
+            for neighbor in point.neighbors(grid.width, grid.height) {
+                if let Cell::Path { solved: true, .. } | Cell::Endpoint { solved: true, .. } = grid.get(neighbor) {
+                    return true;
+                }
+            }
+            false
+        }
+
+        fn find_all_paths(
+            grid: &Grid,
+            current: Point,
+            end: Point,
+            colour: Colour,
+            visited: &mut HashSet<Point>,
+            path: &mut Vec<Point>,
+        ) -> Vec<Vec<Point>> {
+            if current == end {
+                return vec![path.clone()];
+            }
+
+            let mut results = vec![];
+            visited.insert(current);
+
+            for neighbor in current.neighbors(grid.width, grid.height) {
+                if visited.contains(&neighbor) {
+                    continue;
+                }
+
+                match grid.get(neighbor) {
+                    Cell::Empty => {
+                        path.push(neighbor);
+                        let subpaths = find_all_paths(grid, neighbor, end, colour, visited, path);
+                        results.extend(subpaths);
+                        path.pop();
+                    }
+                    Cell::Path { colour: c, .. } | Cell::Endpoint { colour: c, .. } if c == colour => {
+                        path.push(neighbor);
+                        let subpaths = find_all_paths(grid, neighbor, end, colour, visited, path);
+                        results.extend(subpaths);
+                        path.pop();
+                    }
+                    _ => {}
+                }
+            }
+
+            visited.remove(&current);
+            results
+        }
+
+        fn guaranteed_path_exists(
             grid: &Grid,
             start: Point,
             end: Point,
@@ -231,6 +307,7 @@ impl Grid {
         ) -> Option<Vec<Point>> {
             use std::collections::{HashMap, VecDeque};
 
+            // First try the restricted approach (border + adjacent to solved)
             let mut queue = VecDeque::new();
             let mut came_from = HashMap::new();
             let mut visited = HashSet::new();
@@ -256,7 +333,11 @@ impl Grid {
                         continue;
                     }
 
-                    if !on_border(neighbor, grid.width, grid.height) {
+                    // Can traverse if on border OR adjacent to solved cells
+                    let can_traverse = on_border(neighbor, grid.width, grid.height) 
+                        || is_adjacent_to_solved(grid, neighbor);
+
+                    if !can_traverse {
                         continue;
                     }
 
@@ -266,7 +347,7 @@ impl Grid {
                             came_from.insert(neighbor, current);
                             queue.push_back(neighbor);
                         }
-                        Cell::Path { colour: c } | Cell::Endpoint { colour: c } if c == colour => {
+                        Cell::Path { colour: c, .. } | Cell::Endpoint { colour: c, .. } if c == colour => {
                             visited.insert(neighbor);
                             came_from.insert(neighbor, current);
                             queue.push_back(neighbor);
@@ -275,30 +356,83 @@ impl Grid {
                     }
                 }
             }
+
+            // If restricted approach failed, try finding all possible paths
+            // If there's exactly one path, it's guaranteed
+            let mut all_visited = HashSet::new();
+            let mut path = vec![start];
+            let all_paths = find_all_paths(grid, start, end, colour, &mut all_visited, &mut path);
+            
+            if all_paths.len() == 1 {
+                return Some(all_paths.into_iter().next().unwrap());
+            }
+
             None
         }
 
-        let mut updates: Vec<(Point, Cell)> = Vec::new();
+        loop {
+            let mut updates: Vec<(Point, Cell)> = Vec::new();
+            let mut solved_colours: Vec<Colour> = Vec::new();
 
-        for (&colour, &(start, end)) in endpoints {
-            // Only try if both endpoints are on border
-            if !(on_border(start, self.width, self.height)
-                && on_border(end, self.width, self.height))
-            {
-                continue;
-            }
+            for (&colour, &(start, end)) in endpoints {
+                if self.connected(colour, start, end) {
+                    continue;
+                }
 
-            if let Some(path) = border_path_exists(self, start, end, colour) {
-                for &p in &path {
-                    if let Cell::Empty = self.get(p) {
-                        updates.push((p, Cell::Path { colour }));
+                let start_valid = on_border(start, self.width, self.height) 
+                    || is_adjacent_to_solved(self, start);
+                let end_valid = on_border(end, self.width, self.height) 
+                    || is_adjacent_to_solved(self, end);
+
+                if !(start_valid && end_valid) {
+                    continue;
+                }
+
+                if let Some(path) = guaranteed_path_exists(self, start, end, colour) {
+                    let mut has_updates = false;
+                    for &p in &path {
+                        if let Cell::Empty = self.get(p) {
+                            updates.push((p, Cell::Path { colour, solved: true }));
+                            has_updates = true;
+                        }
+                    }
+                    if has_updates {
+                        solved_colours.push(colour);
                     }
                 }
             }
-        }
 
-        for (p, cell) in updates {
-            self.set(p, cell);
+            // If no updates found, we're done
+            if updates.is_empty() {
+                break;
+            }
+
+            // Apply updates
+            for (p, cell) in updates {
+                self.set(p, cell);
+            }
+
+            // Mark all cells of the solved colours as solved
+            for colour in solved_colours {
+                self.mark_solved(colour);
+            }
+        }
+    }
+
+    pub fn mark_solved(&mut self, colour: Colour) {
+        for y in 0..self.height {
+            for x in 0..self.width {
+                let point = Point::new(x, y);
+                match self.get(point) {
+                    Cell::Endpoint { colour: c, .. } if c == colour => {
+                        self.set(point, Cell::Endpoint { colour, solved: true });
+                    }
+                    Cell::Path { colour: c, .. } if c == colour => {
+                        self.set(point, Cell::Path { colour, solved: true });
+                    }
+                    _ => {}
+                }
+            }
         }
     }
 }

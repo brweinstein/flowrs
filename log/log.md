@@ -66,8 +66,66 @@ Additionally, I have not implemented a error message for when the puzzle is impo
 
 ### TODO:
 - Implement solver.rs
-- Error message for unsolvable puzzle
-- Time trial mode (how many puzzles in X seconds) and benchmarking
 - More puzzles as txt files for testing
-- README.md
-- Package for Github
+
+## November 05 2025
+
+I am now revisiting this project in order to create a better solver than brute force way.
+
+I decided to revisit the `fill_guaranteed` function in board.rs to make it work for more than paths completely along an edge. We apply a boolean solved for endpoint and path cells.
+
+```rust
+pub enum Cell {
+    Empty,
+    Endpoint { colour: Colour, solved: bool}
+    Path { colour: Colour, solved: bool }
+}
+```
+
+To get this to work in the fill_guaranteed function, we define an auxillary function to go with `on_border`. 
+
+```rust
+fn is_adjacent_to_solved(grid: &Grid, point: Point) -> bool {
+    for neighbor in point.neighbors(grid.width, grid.height) {
+        if let Cell::Path { solved: true, .. } | Cell::Endpoint { solved: true, .. } = grid.get(neighbor) {
+            return true;
+        }
+    }
+    false
+}
+```
+
+After checking the `on_border(args) || is_adjacent_to_solved(args)`, this handles the adjacent to solved 
+
+Then this allows a grid such as `regular_5x5_01.txt` and solve it in one step with `fill_guaranteed`.
+```txt
+R.G.Y
+..B.O
+.....
+.G.Y.
+.RBO.
+```
+
+However, when trying to fill a grid such as
+```txt
+......B
+.....OR
+.O.....
+...GC..
+..G.Y..
+....RY.
+.....BC
+```
+
+We can call fill_guaranteed to achieve
+```txt
+bbbbbbB
+booooOR
+bO.....
+b..GC..
+b.G.Y..
+b...RY.
+b....BC
+```
+
+However we should be able to fill the red path since it is guaranteed as well as the next step. However if we note the cell at row 3, column 2 (starting at 0), then it fails our checks to be guaranteed. Right now we check whether the current cell is adjacent to a solved path or an edge. We only check the four neighbours and do not check a diagnonal. I am continuing to work on improving this implementation to handle the red case.
