@@ -24,7 +24,7 @@ pub fn grid_from_txt(path: PathBuf) -> Grid {
 
     for (y, line) in reader.lines().enumerate() {
         let line = line.expect("Failed to read line");
-        width = line.len().max(width); // In case lines are inconsistent in length
+        width = line.len().max(width); 
 
         for (x, ch) in line.chars().enumerate() {
             if ch.is_ascii_alphabetic() {

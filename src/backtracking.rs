@@ -51,7 +51,6 @@ fn find_paths(
 pub fn brute_force(grid: &mut Grid) -> bool {
     let endpoints = grid.get_endpoints();
     grid.fill_guaranteed(&endpoints);
-    println!("{}", grid);
 
     let pairs: Vec<(Colour, Point, Point)> =
         endpoints.iter().map(|(&c, &(s, e))| (c, s, e)).collect();
